@@ -1,0 +1,36 @@
+kind: List
+items: 
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: activemq-artemis-docker
+    name: activemq-artemis-docker
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'activemq-artemis-docker:latest'
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: 'https://github.com/stewartshea/activemq-artemis-ocp'
+      type: Git
+    strategy:
+      dockerStrategy: {}
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    generation: 1
+    labels:
+      app: activemq-artemis-docker
+    name: activemq-artemis-docker
+  spec:
+    lookupPolicy:
+      local: true

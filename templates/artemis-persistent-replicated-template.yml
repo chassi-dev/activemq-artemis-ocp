@@ -1,0 +1,1406 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: artemis-persistent-replicated
+metadata:
+  annotations:
+    description: Master and slave stateful set. Do not scale beyond 1 pod each. 
+    openshift.io/display-name: Artemis 2.6.2 (no SSL, replicated master/slave)
+    openshift.io/provider-display-name: Custom template
+    tags: messaging,artemis
+  name: artemis-persistent-replicated
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: artemis-master
+    name: artemis-master
+  spec:
+    ports:
+      - name: 1883-tcp
+        port: 1883
+        protocol: TCP
+        targetPort: 1883
+      - name: 5445-tcp
+        port: 5445
+        protocol: TCP
+        targetPort: 5445
+      - name: 5672-tcp
+        port: 5672
+        protocol: TCP
+        targetPort: 5672
+      - name: 8161-tcp
+        port: 8161
+        protocol: TCP
+        targetPort: 8161
+      - name: 9404-tcp
+        port: 9404
+        protocol: TCP
+        targetPort: 9404
+      - name: 61613-tcp
+        port: 61613
+        protocol: TCP
+        targetPort: 61613
+      - name: 61616-tcp
+        port: 61616
+        protocol: TCP
+        targetPort: 61616
+    selector:
+      app: artemis-master
+    sessionAffinity: ClientIP
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: artemis-slave
+    name: artemis-slave
+  spec:
+    ports:
+      - name: 1883-tcp
+        port: 1883
+        protocol: TCP
+        targetPort: 1883
+      - name: 5445-tcp
+        port: 5445
+        protocol: TCP
+        targetPort: 5445
+      - name: 5672-tcp
+        port: 5672
+        protocol: TCP
+        targetPort: 5672
+      - name: 8161-tcp
+        port: 8161
+        protocol: TCP
+        targetPort: 8161
+      - name: 9404-tcp
+        port: 9404
+        protocol: TCP
+        targetPort: 9404
+      - name: 61613-tcp
+        port: 61613
+        protocol: TCP
+        targetPort: 61613
+      - name: 61616-tcp
+        port: 61616
+        protocol: TCP
+        targetPort: 61616
+    selector:
+      app: artemis-slave
+    sessionAffinity: ClientIP
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    artemis-roles.properties: >
+      ##
+      ---------------------------------------------------------------------------
+
+      ## Licensed to the Apache Software Foundation (ASF) under one or more
+
+      ## contributor license agreements.  See the NOTICE file distributed with
+
+      ## this work for additional information regarding copyright ownership.
+
+      ## The ASF licenses this file to You under the Apache License, Version 2.0
+
+      ## (the "License"); you may not use this file except in compliance with
+
+      ## the License.  You may obtain a copy of the License at
+
+      ##
+
+      ## http://www.apache.org/licenses/LICENSE-2.0
+
+      ##
+
+      ## Unless required by applicable law or agreed to in writing, software
+
+      ## distributed under the License is distributed on an "AS IS" BASIS,
+
+      ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      ## See the License for the specific language governing permissions and
+
+      ## limitations under the License.
+
+      ##
+      ---------------------------------------------------------------------------
+
+
+
+      amq = admin
+    artemis-users.properties: >
+      ##
+      ---------------------------------------------------------------------------
+
+      ## Licensed to the Apache Software Foundation (ASF) under one or more
+
+      ## contributor license agreements.  See the NOTICE file distributed with
+
+      ## this work for additional information regarding copyright ownership.
+
+      ## The ASF licenses this file to You under the Apache License, Version 2.0
+
+      ## (the "License"); you may not use this file except in compliance with
+
+      ## the License.  You may obtain a copy of the License at
+
+      ##
+
+      ## http://www.apache.org/licenses/LICENSE-2.0
+
+      ##
+
+      ## Unless required by applicable law or agreed to in writing, software
+
+      ## distributed under the License is distributed on an "AS IS" BASIS,
+
+      ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      ## See the License for the specific language governing permissions and
+
+      ## limitations under the License.
+
+      ##
+      ---------------------------------------------------------------------------
+
+
+
+      admin =
+      ENC(1024:90E0FE7C7AE305243DCF17D3650EBF798D0A46CF15CC8C9B11E61B328493783E:994F0A78728359346716803D04759B008FCFEE87D90F1D92F6C5BB9C8A640D2A6FF66AA7CD5D61ECB46998915F149066810293DF5FAF3D6805254B06874CDAA5)
+    artemis.profile: >
+      # Licensed to the Apache Software Foundation (ASF) under one
+
+      # or more contributor license agreements.  See the NOTICE file
+
+      # distributed with this work for additional information
+
+      # regarding copyright ownership.  The ASF licenses this file
+
+      # to you under the Apache License, Version 2.0 (the
+
+      # "License"); you may not use this file except in compliance
+
+      # with the License.  You may obtain a copy of the License at
+
+      #
+
+      #   http://www.apache.org/licenses/LICENSE-2.0
+
+      #
+
+      # Unless required by applicable law or agreed to in writing,
+
+      # software distributed under the License is distributed on an
+
+      # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+
+      # KIND, either express or implied.  See the License for the
+
+      # specific language governing permissions and limitations
+
+      # under the License.
+
+
+      ARTEMIS_HOME='/opt/apache-artemis-2.6.2'
+
+      ARTEMIS_INSTANCE='/var/lib/artemis'
+
+      ARTEMIS_DATA_DIR='/var/lib/artemis/data'
+
+      ARTEMIS_ETC_DIR='/var/lib/artemis/etc'
+
+
+      # The logging config will need an URI
+
+      # this will be encoded in case you use spaces or special characters
+
+      # on your directory structure
+
+      ARTEMIS_INSTANCE_URI='file:/var/lib/artemis/'
+
+      ARTEMIS_INSTANCE_ETC_URI='file:/var/lib/artemis/etc/'
+
+
+      # Cluster Properties: Used to pass arguments to ActiveMQ Artemis which can
+      be referenced in broker.xml
+
+      #ARTEMIS_CLUSTER_PROPS="-Dactivemq.remoting.default.port=61617
+      -Dactivemq.remoting.amqp.port=5673 -Dactivemq.remoting.stomp.port=61614
+      -Dactivemq.remoting.hornetq.port=5446"
+
+
+
+      # Java Opts
+
+      JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 
+      -XX:+PrintClassHistogram -XX:+UseG1GC -XX:+AggressiveOpts  
+      -Dhawtio.realm=activemq  -Dhawtio.offline="true" -Dhawtio.role=amq
+      -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal
+      -Djolokia.policyLocation=${ARTEMIS_INSTANCE_ETC_URI}jolokia-access.xml"
+
+
+      #
+
+      # There might be options that you only want to enable on specifc commands,
+      like setting a JMX port
+
+      # See https://issues.apache.org/jira/browse/ARTEMIS-318
+
+      #if [ "$1" = "run" ]; then
+
+      #  JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 $JAVA_ARGS
+      -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=1099
+      -Dcom.sun.management.jmxremote.rmi.port=1098
+      -Dcom.sun.management.jmxremote.ssl=false
+      -Dcom.sun.management.jmxremote.authenticate=false"
+
+      #fi
+
+
+      #
+
+      # Logs Safepoints JVM pauses: Uncomment to enable them
+
+      # In addition to the traditional GC logs you could enable some JVM flags to
+      know any meaningful and "hidden" pause that could
+
+      # affect the latencies of the services delivered by the broker, including
+      those that are not reported by the classic GC logs
+
+      # and dependent by JVM background work (eg method deoptimizations, lock
+      unbiasing, JNI, counted loops and obviously GC activity).
+
+      # Replace "all_pauses.log" with the file name you want to log to.
+
+      # JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 $JAVA_ARGS
+      -XX:+PrintSafepointStatistics -XX:PrintSafepointStatisticsCount=1
+      -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime
+      -XX:+LogVMOutput -XX:LogFile=all_pauses.log"
+
+
+      # Debug args: Uncomment to enable debug
+
+      #DEBUG_ARGS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+    bootstrap.xml: |
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <!--
+        ~ Licensed to the Apache Software Foundation (ASF) under one or more
+        ~ contributor license agreements. See the NOTICE file distributed with
+        ~ this work for additional information regarding copyright ownership.
+        ~ The ASF licenses this file to You under the Apache License, Version 2.0
+        ~ (the "License"); you may not use this file except in compliance with
+        ~ the License. You may obtain a copy of the License at
+        ~
+        ~     http://www.apache.org/licenses/LICENSE-2.0
+        ~
+        ~ Unless required by applicable law or agreed to in writing, software
+        ~ distributed under the License is distributed on an "AS IS" BASIS,
+        ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        ~ See the License for the specific language governing permissions and
+        ~ limitations under the License.
+        -->
+      <broker xmlns="http://activemq.org/schema">
+        <jaas-security domain="activemq"/>
+        <!-- artemis.URI.instance is parsed from artemis.instance by the CLI startup.
+              This is to avoid situations where you could have spaces or special characters on this URI -->
+        <server configuration="file:/var/lib/artemis/etc//broker.xml"/>
+        <!-- The web server is only bound to localhost by default -->
+        <web bind="http://0.0.0.0:8161" path="web">
+          <app url="activemq-branding" war="activemq-branding.war"/>
+          <app url="artemis-plugin" war="artemis-plugin.war"/>
+          <app url="console" war="console.war"/>
+        </web>
+      </broker>
+    broker.xml: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!--\nLicensed to the Apache Software Foundation (ASF) under one\nor more contributor license agreements.  See the NOTICE file\ndistributed with this work for additional information\nregarding copyright ownership.  The ASF licenses this file\nto you under the Apache License, Version 2.0 (the\n\"License\"); you may not use this file except in compliance\nwith the License.  You may obtain a copy of the License at\n\n  http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing,\nsoftware distributed under the License is distributed on an\n\"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\nKIND, either express or implied.  See the License for the\nspecific language governing permissions and limitations\nunder the License.\n-->\n<configuration xmlns=\"urn:activemq\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:activemq /schema/artemis-configuration.xsd\">\n   <core xmlns=\"urn:activemq:core\">\n      <name>${AMQ_NAME}</name>\n      \n       <bindings-directory>./data/bindings</bindings-directory>\n\n       <journal-directory>./data/journal</journal-directory>\n     \n    <!-- <journal-directory>/journal</journal-directory> -->\n    \n      <large-messages-directory>./data/largemessages</large-messages-directory>\n\n      <paging-directory>./data/paging</paging-directory>\n\n      <ha-policy>\n       <replication>\n          <master> \n            <check-for-live-server>true</check-for-live-server>\n          </master>\n       </replication>\n    </ha-policy>\n    \n      <!-- Connectors -->\n    <connectors>\n        <!-- Connector used to be announced through cluster connections and notifications -->\n        <connector name=\"artemis\">tcp://${BROKER_IP}:61616</connector>\n    </connectors>\n\n      <acceptors>\n\n         <!-- useEpoll means: it will use Netty epoll if you are on a system (Linux) that supports it -->\n         <!-- amqpCredits: The number of credits sent to AMQP producers -->\n         <!-- amqpLowCredits: The server will send the # credits specified at amqpCredits at this low mark -->\n\n         <!-- Acceptor for every supported protocol -->\n         <acceptor name=\"artemis\">tcp://${BROKER_IP}:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>\n\n         <!-- AMQP Acceptor.  Listens on default AMQP port for AMQP traffic.-->\n         <acceptor name=\"amqp\">tcp://${BROKER_IP}:5672?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=AMQP;useEpoll=true;amqpCredits=1000;amqpMinCredits=300</acceptor>\n\n         <!-- STOMP Acceptor. -->\n         <acceptor name=\"stomp\">tcp://${BROKER_IP}:61613?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=STOMP;useEpoll=true</acceptor>\n\n         <!-- HornetQ Compatibility Acceptor.  Enables HornetQ Core and STOMP for legacy HornetQ clients. -->\n         <acceptor name=\"hornetq\">tcp://${BROKER_IP}:5445?protocols=HORNETQ,STOMP;useEpoll=true</acceptor>\n\n         <!-- MQTT Acceptor -->\n         <acceptor name=\"mqtt\">tcp://${BROKER_IP}:1883?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=MQTT;useEpoll=true</acceptor>\n\n      </acceptors>\n\n\n      <!-- Clustering configuration -->\n\n      <broadcast-groups>\n        <broadcast-group name=\"master-broadcast-group\">          \n        <jgroups-file>jgroups-ping.xml</jgroups-file>          \n        <jgroups-channel>master_activemq_broadcast_channel</jgroups-channel>          \n        <connector-ref>artemis</connector-ref>       \n        </broadcast-group>\t\n      </broadcast-groups>\n\n      <discovery-groups>\n        <discovery-group name=\"master-discovery-group\">          \n        <jgroups-file>jgroups-ping.xml</jgroups-file>          \n        <jgroups-channel>master_activemq_broadcast_channel</jgroups-channel>          \n        <refresh-timeout>10000</refresh-timeout>       \n        </discovery-group>\t\n      </discovery-groups>\n\n      <cluster-connections>\n        <cluster-connection name=\"master-cluster\">          \n        <connector-ref>artemis</connector-ref>          \n        <retry-interval>500</retry-interval>          \n        <use-duplicate-detection>true</use-duplicate-detection>          \n        <message-load-balancing>STRICT</message-load-balancing>          \n        <max-hops>1</max-hops>          \n        <discovery-group-ref discovery-group-name=\"master-discovery-group\"/>       \n        </cluster-connection>\t\n      </cluster-connections>\n\n      <!-- Other config -->\n\n    <security-settings>\n      <security-setting match=\"#\">\n        <permission type=\"createNonDurableQueue\" roles=\"amq\"/>\n        <permission type=\"deleteNonDurableQueue\" roles=\"amq\"/>\n        <permission type=\"createDurableQueue\" roles=\"amq\"/>\n        <permission type=\"deleteDurableQueue\" roles=\"amq\"/>\n        <permission type=\"createAddress\" roles=\"amq\"/>\n        <permission type=\"deleteAddress\" roles=\"amq\"/>\n        <permission type=\"consume\" roles=\"amq\"/>\n        <permission type=\"browse\" roles=\"amq\"/>\n        <permission type=\"send\" roles=\"amq\"/>\n        <!-- we need this otherwise ./artemis data imp wouldn't work -->\n        <permission type=\"manage\" roles=\"amq\"/>\n      </security-setting>\n    </security-settings>\n    <address-settings>\n      <!-- if you define auto-create on certain queues, management has to be auto-create -->\n      <address-setting match=\"activemq.management#\">\n        <dead-letter-address>DLQ</dead-letter-address>\n        <expiry-address>ExpiryQueue</expiry-address>\n        <redelivery-delay>0</redelivery-delay>\n        <!-- with -1 only the global-max-size is in use for limiting -->\n        <max-size-bytes>-1</max-size-bytes>\n        <message-counter-history-day-limit>10</message-counter-history-day-limit>\n        <address-full-policy>PAGE</address-full-policy>\n        <auto-create-queues>true</auto-create-queues>\n        <auto-create-addresses>true</auto-create-addresses>\n        <auto-create-jms-queues>true</auto-create-jms-queues>\n        <auto-create-jms-topics>true</auto-create-jms-topics>\n      </address-setting>\n      <!--default for catch all-->\n      <address-setting match=\"#\">\n        <dead-letter-address>DLQ</dead-letter-address>\n        <expiry-address>ExpiryQueue</expiry-address>\n        <redelivery-delay>0</redelivery-delay>\n        <!-- with -1 only the global-max-size is in use for limiting -->\n        <max-size-bytes>-1</max-size-bytes>\n        <message-counter-history-day-limit>10</message-counter-history-day-limit>\n        <address-full-policy>PAGE</address-full-policy>\n        <auto-create-queues>true</auto-create-queues>\n        <auto-create-addresses>true</auto-create-addresses>\n        <auto-create-jms-queues>true</auto-create-jms-queues>\n        <auto-create-jms-topics>true</auto-create-jms-topics>\n      </address-setting>\n    </address-settings>\n    <addresses>\n      <address name=\"DLQ\">\n        <anycast>\n          <queue name=\"DLQ\"/>\n        </anycast>\n      </address>\n      <address name=\"ExpiryQueue\">\n        <anycast>\n          <queue name=\"ExpiryQueue\"/>\n        </anycast>\n      </address>\n    </addresses>\n   </core>\n</configuration>"
+    jgroups-ping.xml: |-
+      <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="urn:org:jgroups"
+              xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+          <TCP bind_port="8888"
+
+              recv_buf_size="${tcp.recv_buf_size:5M}"
+              send_buf_size="${tcp.send_buf_size:5M}"
+              max_bundle_size="64K"
+              max_bundle_timeout="30"
+              use_send_queues="true"
+              sock_conn_timeout="300"
+
+              timer_type="new3"
+              timer.min_threads="4"
+              timer.max_threads="10"
+              timer.keep_alive_time="3000"
+              timer.queue_max_size="500"
+
+              thread_pool.enabled="true"
+              thread_pool.min_threads="2"
+              thread_pool.max_threads="8"
+              thread_pool.keep_alive_time="5000"
+              thread_pool.queue_enabled="true"
+              thread_pool.queue_max_size="10000"
+              thread_pool.rejection_policy="discard"
+
+              oob_thread_pool.enabled="true"
+              oob_thread_pool.min_threads="1"
+              oob_thread_pool.max_threads="8"
+              oob_thread_pool.keep_alive_time="5000"
+              oob_thread_pool.queue_enabled="false"
+              oob_thread_pool.queue_max_size="100"
+              oob_thread_pool.rejection_policy="discard"/>
+
+      <org.jgroups.protocols.kubernetes.KUBE_PING
+          namespace="${KUBERNETES_NAMESPACE:${K8S_NAMESPACE}}"
+          labels="${KUBE_LABEL:amqcluster=artemis}" />
+
+          <MERGE3  min_interval="10000"
+                  max_interval="30000"/>
+          <FD_SOCK/>
+          <FD timeout="3000" max_tries="3" />
+          <VERIFY_SUSPECT timeout="1500"  />
+          <BARRIER />
+          <pbcast.NAKACK2 use_mcast_xmit="false"
+                        discard_delivered_msgs="true"/>
+          <UNICAST3 />
+          <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                        max_bytes="4M"/>
+          <pbcast.GMS print_local_addr="true"
+                      view_bundling="true"/>
+          <MFC max_credits="2M"
+              min_threshold="0.4"/>
+          <FRAG2 frag_size="60K"  />
+          <!--RSVP resend_interval="2000" timeout="10000"/-->
+          <pbcast.STATE_TRANSFER/>
+      </config>
+    jolokia-access.xml: >
+      <?xml version="1.0" encoding="utf-8"?>
+
+      <!--
+
+      Licensed to the Apache Software Foundation (ASF) under one
+
+      or more contributor license agreements.  See the NOTICE file
+
+      distributed with this work for additional information
+
+      regarding copyright ownership.  The ASF licenses this file
+
+      to you under the Apache License, Version 2.0 (the
+
+      "License"); you may not use this file except in compliance
+
+      with the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing,
+
+      software distributed under the License is distributed on an
+
+      "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+
+      KIND, either express or implied.  See the License for the
+
+      specific language governing permissions and limitations
+
+      under the License.
+
+      -->
+
+      <!-- This policy file controls the Jolokia JMX-HTTP bridge security options
+      for the web console.
+        see: https://jolokia.org/reference/html/security.html -->
+      <restrict>
+        <cors>
+          <!-- Allow cross origin access from localhost ... -->
+          <allow-origin>*</allow-origin>
+          <!-- Check for the proper origin on the server side, too -->
+          <strict-checking/>
+        </cors>
+        <remote>
+          <host>0.0.0.0/0</host>
+        </remote>
+      </restrict>
+    logging.properties: >
+      #
+
+      # Licensed to the Apache Software Foundation (ASF) under one or more
+
+      # contributor license agreements. See the NOTICE file distributed with
+
+      # this work for additional information regarding copyright ownership.
+
+      # The ASF licenses this file to You under the Apache License, Version 2.0
+
+      # (the "License"); you may not use this file except in compliance with
+
+      # the License. You may obtain a copy of the License at
+
+      #
+
+      #     http://www.apache.org/licenses/LICENSE-2.0
+
+      #
+
+      # Unless required by applicable law or agreed to in writing, software
+
+      # distributed under the License is distributed on an "AS IS" BASIS,
+
+      # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      # See the License for the specific language governing permissions and
+
+      # limitations under the License.
+
+      #
+
+
+      # Additional logger names to configure (root logger is always configured)
+
+      # Root logger option
+
+      loggers=org.eclipse.jetty,org.jboss.logging,org.apache.activemq.artemis.core.server,org.apache.activemq.artemis.utils,org.apache.activemq.artemis.journal,org.apache.activemq.artemis.jms.server,org.apache.activemq.artemis.integration.bootstrap
+
+
+      # Root logger level
+
+      logger.level=INFO
+
+      # ActiveMQ Artemis logger levels
+
+      logger.org.apache.activemq.artemis.core.server.level=INFO
+
+      logger.org.apache.activemq.artemis.journal.level=INFO
+
+      logger.org.apache.activemq.artemis.utils.level=INFO
+
+      logger.org.apache.activemq.artemis.jms.level=INFO
+
+      logger.org.apache.activemq.artemis.integration.bootstrap.level=INFO
+
+      logger.org.eclipse.jetty.level=WARN
+
+      # Root logger handlers
+
+      logger.handlers=CONSOLE
+
+
+      # Console handler configuration
+
+      handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+
+      handler.CONSOLE.properties=autoFlush
+
+      handler.CONSOLE.level=DEBUG
+
+      handler.CONSOLE.autoFlush=true
+
+      handler.CONSOLE.formatter=PATTERN
+
+
+      # File handler configuration
+
+      handler.FILE=org.jboss.logmanager.handlers.PeriodicRotatingFileHandler
+
+      handler.FILE.level=DEBUG
+
+      handler.FILE.properties=suffix,append,autoFlush,fileName
+
+      handler.FILE.suffix=.yyyy-MM-dd
+
+      handler.FILE.append=true
+
+      handler.FILE.autoFlush=true
+
+      handler.FILE.fileName=${artemis.instance}/log/artemis.log
+
+      handler.FILE.formatter=PATTERN
+
+
+      # Formatter pattern configuration
+
+      formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+
+      formatter.PATTERN.properties=pattern
+
+      formatter.PATTERN.pattern=%d %-5p [%c] %s%E%n
+    login.config: |-
+      /*
+      * Licensed to the Apache Software Foundation (ASF) under one or more
+      * contributor license agreements.  See the NOTICE file distributed with
+      * this work for additional information regarding copyright ownership.
+      * The ASF licenses this file to You under the Apache License, Version 2.0
+      * (the "License"); you may not use this file except in compliance with
+      * the License.  You may obtain a copy of the License at
+      *
+      * http://www.apache.org/licenses/LICENSE-2.0
+      *
+      * Unless required by applicable law or agreed to in writing, software
+      * distributed under the License is distributed on an "AS IS" BASIS,
+      * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      * See the License for the specific language governing permissions and
+      * limitations under the License.
+      */
+
+      activemq {
+        org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule required
+            debug=false
+            reload=true
+            org.apache.activemq.jaas.properties.user="artemis-users.properties"
+            org.apache.activemq.jaas.properties.role="artemis-roles.properties";
+      };
+    management.xml: |-
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <!--
+        ~ Licensed to the Apache Software Foundation (ASF) under one or more
+        ~ contributor license agreements. See the NOTICE file distributed with
+        ~ this work for additional information regarding copyright ownership.
+        ~ The ASF licenses this file to You under the Apache License, Version 2.0
+        ~ (the "License"); you may not use this file except in compliance with
+        ~ the License. You may obtain a copy of the License at
+        ~
+        ~     http://www.apache.org/licenses/LICENSE-2.0
+        ~
+        ~ Unless required by applicable law or agreed to in writing, software
+        ~ distributed under the License is distributed on an "AS IS" BASIS,
+        ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        ~ See the License for the specific language governing permissions and
+        ~ limitations under the License.
+        -->
+      <management-context xmlns="http://activemq.org/schema">
+        <!--<connector connector-port="1099"/>-->
+        <authorisation>
+            <whitelist>
+              <entry domain="hawtio"/>
+            </whitelist>
+            <default-access>
+              <access method="list*" roles="amq"/>
+              <access method="get*" roles="amq"/>
+              <access method="is*" roles="amq"/>
+              <access method="set*" roles="amq"/>
+              <access method="*" roles="amq"/>
+            </default-access>
+            <role-access>
+              <match domain="org.apache.activemq.artemis">
+                  <access method="list*" roles="amq"/>
+                  <access method="get*" roles="amq"/>
+                  <access method="is*" roles="amq"/>
+                  <access method="set*" roles="amq"/>
+                  <access method="*" roles="amq"/>
+              </match>
+              <!--example of how to configure a specific object-->
+              <!--<match domain="org.apache.activemq.artemis" key="subcomponent=queues">
+                  <access method="list*" roles="view,update,amq"/>
+                  <access method="get*" roles="view,update,amq"/>
+                  <access method="is*" roles="view,update,amq"/>
+                  <access method="set*" roles="update,amq"/>
+                  <access method="*" roles="amq"/>
+              </match>-->
+            </role-access>
+        </authorisation>
+      </management-context>
+  kind: ConfigMap
+  metadata:
+    name: configmap-master-broker
+- apiVersion: v1
+  data:
+    artemis-roles.properties: >
+      ##
+      ---------------------------------------------------------------------------
+
+      ## Licensed to the Apache Software Foundation (ASF) under one or more
+
+      ## contributor license agreements.  See the NOTICE file distributed with
+
+      ## this work for additional information regarding copyright ownership.
+
+      ## The ASF licenses this file to You under the Apache License, Version 2.0
+
+      ## (the "License"); you may not use this file except in compliance with
+
+      ## the License.  You may obtain a copy of the License at
+
+      ##
+
+      ## http://www.apache.org/licenses/LICENSE-2.0
+
+      ##
+
+      ## Unless required by applicable law or agreed to in writing, software
+
+      ## distributed under the License is distributed on an "AS IS" BASIS,
+
+      ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      ## See the License for the specific language governing permissions and
+
+      ## limitations under the License.
+
+      ##
+      ---------------------------------------------------------------------------
+
+
+
+      amq = admin
+    artemis-users.properties: >
+      ##
+      ---------------------------------------------------------------------------
+
+      ## Licensed to the Apache Software Foundation (ASF) under one or more
+
+      ## contributor license agreements.  See the NOTICE file distributed with
+
+      ## this work for additional information regarding copyright ownership.
+
+      ## The ASF licenses this file to You under the Apache License, Version 2.0
+
+      ## (the "License"); you may not use this file except in compliance with
+
+      ## the License.  You may obtain a copy of the License at
+
+      ##
+
+      ## http://www.apache.org/licenses/LICENSE-2.0
+
+      ##
+
+      ## Unless required by applicable law or agreed to in writing, software
+
+      ## distributed under the License is distributed on an "AS IS" BASIS,
+
+      ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      ## See the License for the specific language governing permissions and
+
+      ## limitations under the License.
+
+      ##
+      ---------------------------------------------------------------------------
+
+
+
+      admin =
+      ENC(1024:90E0FE7C7AE305243DCF17D3650EBF798D0A46CF15CC8C9B11E61B328493783E:994F0A78728359346716803D04759B008FCFEE87D90F1D92F6C5BB9C8A640D2A6FF66AA7CD5D61ECB46998915F149066810293DF5FAF3D6805254B06874CDAA5)
+    artemis.profile: >
+      # Licensed to the Apache Software Foundation (ASF) under one
+
+      # or more contributor license agreements.  See the NOTICE file
+
+      # distributed with this work for additional information
+
+      # regarding copyright ownership.  The ASF licenses this file
+
+      # to you under the Apache License, Version 2.0 (the
+
+      # "License"); you may not use this file except in compliance
+
+      # with the License.  You may obtain a copy of the License at
+
+      #
+
+      #   http://www.apache.org/licenses/LICENSE-2.0
+
+      #
+
+      # Unless required by applicable law or agreed to in writing,
+
+      # software distributed under the License is distributed on an
+
+      # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+
+      # KIND, either express or implied.  See the License for the
+
+      # specific language governing permissions and limitations
+
+      # under the License.
+
+
+      ARTEMIS_HOME='/opt/apache-artemis-2.6.2'
+
+      ARTEMIS_INSTANCE='/var/lib/artemis'
+
+      ARTEMIS_DATA_DIR='/var/lib/artemis/data'
+
+      ARTEMIS_ETC_DIR='/var/lib/artemis/etc'
+
+
+      # The logging config will need an URI
+
+      # this will be encoded in case you use spaces or special characters
+
+      # on your directory structure
+
+      ARTEMIS_INSTANCE_URI='file:/var/lib/artemis/'
+
+      ARTEMIS_INSTANCE_ETC_URI='file:/var/lib/artemis/etc/'
+
+
+      # Cluster Properties: Used to pass arguments to ActiveMQ Artemis which can
+      be referenced in broker.xml
+
+      #ARTEMIS_CLUSTER_PROPS="-Dactivemq.remoting.default.port=61617
+      -Dactivemq.remoting.amqp.port=5673 -Dactivemq.remoting.stomp.port=61614
+      -Dactivemq.remoting.hornetq.port=5446"
+
+
+
+      # Java Opts
+
+      JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 
+      -XX:+PrintClassHistogram -XX:+UseG1GC -XX:+AggressiveOpts  
+      -Dhawtio.realm=activemq  -Dhawtio.offline="true" -Dhawtio.role=amq
+      -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal
+      -Djolokia.policyLocation=${ARTEMIS_INSTANCE_ETC_URI}jolokia-access.xml"
+
+
+      #
+
+      # There might be options that you only want to enable on specifc commands,
+      like setting a JMX port
+
+      # See https://issues.apache.org/jira/browse/ARTEMIS-318
+
+      #if [ "$1" = "run" ]; then
+
+      #  JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 $JAVA_ARGS
+      -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=1099
+      -Dcom.sun.management.jmxremote.rmi.port=1098
+      -Dcom.sun.management.jmxremote.ssl=false
+      -Dcom.sun.management.jmxremote.authenticate=false"
+
+      #fi
+
+
+      #
+
+      # Logs Safepoints JVM pauses: Uncomment to enable them
+
+      # In addition to the traditional GC logs you could enable some JVM flags to
+      know any meaningful and "hidden" pause that could
+
+      # affect the latencies of the services delivered by the broker, including
+      those that are not reported by the classic GC logs
+
+      # and dependent by JVM background work (eg method deoptimizations, lock
+      unbiasing, JNI, counted loops and obviously GC activity).
+
+      # Replace "all_pauses.log" with the file name you want to log to.
+
+      # JAVA_ARGS="-Djava.net.preferIPv4Addresses=true
+      -Djava.net.preferIPv4Stack=true -XX:+UnlockExperimentalVMOptions
+      -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=2 $JAVA_ARGS
+      -XX:+PrintSafepointStatistics -XX:PrintSafepointStatisticsCount=1
+      -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime
+      -XX:+LogVMOutput -XX:LogFile=all_pauses.log"
+
+
+      # Debug args: Uncomment to enable debug
+
+      #DEBUG_ARGS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+    bootstrap.xml: |
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <!--
+        ~ Licensed to the Apache Software Foundation (ASF) under one or more
+        ~ contributor license agreements. See the NOTICE file distributed with
+        ~ this work for additional information regarding copyright ownership.
+        ~ The ASF licenses this file to You under the Apache License, Version 2.0
+        ~ (the "License"); you may not use this file except in compliance with
+        ~ the License. You may obtain a copy of the License at
+        ~
+        ~     http://www.apache.org/licenses/LICENSE-2.0
+        ~
+        ~ Unless required by applicable law or agreed to in writing, software
+        ~ distributed under the License is distributed on an "AS IS" BASIS,
+        ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        ~ See the License for the specific language governing permissions and
+        ~ limitations under the License.
+        -->
+      <broker xmlns="http://activemq.org/schema">
+        <jaas-security domain="activemq"/>
+        <!-- artemis.URI.instance is parsed from artemis.instance by the CLI startup.
+              This is to avoid situations where you could have spaces or special characters on this URI -->
+        <server configuration="file:/var/lib/artemis/etc//broker.xml"/>
+        <!-- The web server is only bound to localhost by default -->
+        <web bind="http://0.0.0.0:8161" path="web">
+          <app url="activemq-branding" war="activemq-branding.war"/>
+          <app url="artemis-plugin" war="artemis-plugin.war"/>
+          <app url="console" war="console.war"/>
+        </web>
+      </broker>
+    broker.xml: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!--\nLicensed to the Apache Software Foundation (ASF) under one\nor more contributor license agreements.  See the NOTICE file\ndistributed with this work for additional information\nregarding copyright ownership.  The ASF licenses this file\nto you under the Apache License, Version 2.0 (the\n\"License\"); you may not use this file except in compliance\nwith the License.  You may obtain a copy of the License at\n\n  http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing,\nsoftware distributed under the License is distributed on an\n\"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\nKIND, either express or implied.  See the License for the\nspecific language governing permissions and limitations\nunder the License.\n-->\n<configuration xmlns=\"urn:activemq\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:activemq /schema/artemis-configuration.xsd\">\n   <core xmlns=\"urn:activemq:core\">\n      <name>${AMQ_NAME}</name>\n      \n       <bindings-directory>./data/bindings</bindings-directory>\n\n      <journal-directory>./data/journal</journal-directory>\n     \n    <!-- <journal-directory>/journal</journal-directory> --> \n\n      <large-messages-directory>./data/largemessages</large-messages-directory>\n\n      <paging-directory>./data/paging</paging-directory>\n\n      <ha-policy>\n       <replication>\n          <slave>\n          </slave>\n       </replication>\n    </ha-policy>\n    \n      <!-- Connectors -->\n    <connectors>\n        <!-- Connector used to be announced through cluster connections and notifications -->\n        <connector name=\"artemis\">tcp://${BROKER_IP}:61616</connector>\n    </connectors>\n\n      <acceptors>\n\n         <!-- useEpoll means: it will use Netty epoll if you are on a system (Linux) that supports it -->\n         <!-- amqpCredits: The number of credits sent to AMQP producers -->\n         <!-- amqpLowCredits: The server will send the # credits specified at amqpCredits at this low mark -->\n\n         <!-- Acceptor for every supported protocol -->\n         <acceptor name=\"artemis\">tcp://${BROKER_IP}:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>\n\n         <!-- AMQP Acceptor.  Listens on default AMQP port for AMQP traffic.-->\n         <acceptor name=\"amqp\">tcp://${BROKER_IP}:5672?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=AMQP;useEpoll=true;amqpCredits=1000;amqpMinCredits=300</acceptor>\n\n         <!-- STOMP Acceptor. -->\n         <acceptor name=\"stomp\">tcp://${BROKER_IP}:61613?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=STOMP;useEpoll=true</acceptor>\n\n         <!-- HornetQ Compatibility Acceptor.  Enables HornetQ Core and STOMP for legacy HornetQ clients. -->\n         <acceptor name=\"hornetq\">tcp://${BROKER_IP}:5445?protocols=HORNETQ,STOMP;useEpoll=true</acceptor>\n\n         <!-- MQTT Acceptor -->\n         <acceptor name=\"mqtt\">tcp://${BROKER_IP}:1883?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=MQTT;useEpoll=true</acceptor>\n\n      </acceptors>\n\n\n      <!-- Clustering configuration -->\n\n      <broadcast-groups>\n        <broadcast-group name=\"master-broadcast-group\">          \n        <jgroups-file>jgroups-ping.xml</jgroups-file>          \n        <jgroups-channel>master_activemq_broadcast_channel</jgroups-channel>          \n        <connector-ref>artemis</connector-ref>       \n        </broadcast-group>\t\n      </broadcast-groups>\n\n      <discovery-groups>\n        <discovery-group name=\"master-discovery-group\">          \n        <jgroups-file>jgroups-ping.xml</jgroups-file>          \n        <jgroups-channel>master_activemq_broadcast_channel</jgroups-channel>          \n        <refresh-timeout>10000</refresh-timeout>       \n        </discovery-group>\t\n      </discovery-groups>\n\n      <cluster-connections>\n        <cluster-connection name=\"master-cluster\">          \n        <connector-ref>artemis</connector-ref>          \n        <retry-interval>500</retry-interval>          \n        <use-duplicate-detection>true</use-duplicate-detection>          \n        <message-load-balancing>STRICT</message-load-balancing>          \n        <max-hops>1</max-hops>          \n        <discovery-group-ref discovery-group-name=\"master-discovery-group\"/>       \n        </cluster-connection>\t\n      </cluster-connections>\n\n      <!-- Other config -->\n\n    <security-settings>\n      <security-setting match=\"#\">\n        <permission type=\"createNonDurableQueue\" roles=\"amq\"/>\n        <permission type=\"deleteNonDurableQueue\" roles=\"amq\"/>\n        <permission type=\"createDurableQueue\" roles=\"amq\"/>\n        <permission type=\"deleteDurableQueue\" roles=\"amq\"/>\n        <permission type=\"createAddress\" roles=\"amq\"/>\n        <permission type=\"deleteAddress\" roles=\"amq\"/>\n        <permission type=\"consume\" roles=\"amq\"/>\n        <permission type=\"browse\" roles=\"amq\"/>\n        <permission type=\"send\" roles=\"amq\"/>\n        <!-- we need this otherwise ./artemis data imp wouldn't work -->\n        <permission type=\"manage\" roles=\"amq\"/>\n      </security-setting>\n    </security-settings>\n    <address-settings>\n      <!-- if you define auto-create on certain queues, management has to be auto-create -->\n      <address-setting match=\"activemq.management#\">\n        <dead-letter-address>DLQ</dead-letter-address>\n        <expiry-address>ExpiryQueue</expiry-address>\n        <redelivery-delay>0</redelivery-delay>\n        <!-- with -1 only the global-max-size is in use for limiting -->\n        <max-size-bytes>-1</max-size-bytes>\n        <message-counter-history-day-limit>10</message-counter-history-day-limit>\n        <address-full-policy>PAGE</address-full-policy>\n        <auto-create-queues>true</auto-create-queues>\n        <auto-create-addresses>true</auto-create-addresses>\n        <auto-create-jms-queues>true</auto-create-jms-queues>\n        <auto-create-jms-topics>true</auto-create-jms-topics>\n      </address-setting>\n      <!--default for catch all-->\n      <address-setting match=\"#\">\n        <dead-letter-address>DLQ</dead-letter-address>\n        <expiry-address>ExpiryQueue</expiry-address>\n        <redelivery-delay>0</redelivery-delay>\n        <!-- with -1 only the global-max-size is in use for limiting -->\n        <max-size-bytes>-1</max-size-bytes>\n        <message-counter-history-day-limit>10</message-counter-history-day-limit>\n        <address-full-policy>PAGE</address-full-policy>\n        <auto-create-queues>true</auto-create-queues>\n        <auto-create-addresses>true</auto-create-addresses>\n        <auto-create-jms-queues>true</auto-create-jms-queues>\n        <auto-create-jms-topics>true</auto-create-jms-topics>\n      </address-setting>\n    </address-settings>\n    <addresses>\n      <address name=\"DLQ\">\n        <anycast>\n          <queue name=\"DLQ\"/>\n        </anycast>\n      </address>\n      <address name=\"ExpiryQueue\">\n        <anycast>\n          <queue name=\"ExpiryQueue\"/>\n        </anycast>\n      </address>\n    </addresses>\n   </core>\n</configuration>"
+    jgroups-ping.xml: |-
+      <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="urn:org:jgroups"
+              xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+          <TCP bind_port="8888"
+
+              recv_buf_size="${tcp.recv_buf_size:5M}"
+              send_buf_size="${tcp.send_buf_size:5M}"
+              max_bundle_size="64K"
+              max_bundle_timeout="30"
+              use_send_queues="true"
+              sock_conn_timeout="300"
+
+              timer_type="new3"
+              timer.min_threads="4"
+              timer.max_threads="10"
+              timer.keep_alive_time="3000"
+              timer.queue_max_size="500"
+
+              thread_pool.enabled="true"
+              thread_pool.min_threads="2"
+              thread_pool.max_threads="8"
+              thread_pool.keep_alive_time="5000"
+              thread_pool.queue_enabled="true"
+              thread_pool.queue_max_size="10000"
+              thread_pool.rejection_policy="discard"
+
+              oob_thread_pool.enabled="true"
+              oob_thread_pool.min_threads="1"
+              oob_thread_pool.max_threads="8"
+              oob_thread_pool.keep_alive_time="5000"
+              oob_thread_pool.queue_enabled="false"
+              oob_thread_pool.queue_max_size="100"
+              oob_thread_pool.rejection_policy="discard"/>
+
+      <org.jgroups.protocols.kubernetes.KUBE_PING
+          namespace="${KUBERNETES_NAMESPACE:${K8S_NAMESPACE}}"
+          labels="${KUBE_LABEL:amqcluster=artemis}" />
+
+          <MERGE3  min_interval="10000"
+                  max_interval="30000"/>
+          <FD_SOCK/>
+          <FD timeout="3000" max_tries="3" />
+          <VERIFY_SUSPECT timeout="1500"  />
+          <BARRIER />
+          <pbcast.NAKACK2 use_mcast_xmit="false"
+                        discard_delivered_msgs="true"/>
+          <UNICAST3 />
+          <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                        max_bytes="4M"/>
+          <pbcast.GMS print_local_addr="true"
+                      view_bundling="true"/>
+          <MFC max_credits="2M"
+              min_threshold="0.4"/>
+          <FRAG2 frag_size="60K"  />
+          <!--RSVP resend_interval="2000" timeout="10000"/-->
+          <pbcast.STATE_TRANSFER/>
+      </config>
+    jolokia-access.xml: >
+      <?xml version="1.0" encoding="utf-8"?>
+
+      <!--
+
+      Licensed to the Apache Software Foundation (ASF) under one
+
+      or more contributor license agreements.  See the NOTICE file
+
+      distributed with this work for additional information
+
+      regarding copyright ownership.  The ASF licenses this file
+
+      to you under the Apache License, Version 2.0 (the
+
+      "License"); you may not use this file except in compliance
+
+      with the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing,
+
+      software distributed under the License is distributed on an
+
+      "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+
+      KIND, either express or implied.  See the License for the
+
+      specific language governing permissions and limitations
+
+      under the License.
+
+      -->
+
+      <!-- This policy file controls the Jolokia JMX-HTTP bridge security options
+      for the web console.
+        see: https://jolokia.org/reference/html/security.html -->
+      <restrict>
+        <cors>
+          <!-- Allow cross origin access from localhost ... -->
+          <allow-origin>*</allow-origin>
+          <!-- Check for the proper origin on the server side, too -->
+          <strict-checking/>
+        </cors>
+        <remote>
+          <host>0.0.0.0/0</host>
+        </remote>
+      </restrict>
+    logging.properties: >
+      #
+
+      # Licensed to the Apache Software Foundation (ASF) under one or more
+
+      # contributor license agreements. See the NOTICE file distributed with
+
+      # this work for additional information regarding copyright ownership.
+
+      # The ASF licenses this file to You under the Apache License, Version 2.0
+
+      # (the "License"); you may not use this file except in compliance with
+
+      # the License. You may obtain a copy of the License at
+
+      #
+
+      #     http://www.apache.org/licenses/LICENSE-2.0
+
+      #
+
+      # Unless required by applicable law or agreed to in writing, software
+
+      # distributed under the License is distributed on an "AS IS" BASIS,
+
+      # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+      # See the License for the specific language governing permissions and
+
+      # limitations under the License.
+
+      #
+
+
+      # Additional logger names to configure (root logger is always configured)
+
+      # Root logger option
+
+      loggers=org.eclipse.jetty,org.jboss.logging,org.apache.activemq.artemis.core.server,org.apache.activemq.artemis.utils,org.apache.activemq.artemis.journal,org.apache.activemq.artemis.jms.server,org.apache.activemq.artemis.integration.bootstrap
+
+
+      # Root logger level
+
+      logger.level=INFO
+
+      # ActiveMQ Artemis logger levels
+
+      logger.org.apache.activemq.artemis.core.server.level=INFO
+
+      logger.org.apache.activemq.artemis.journal.level=INFO
+
+      logger.org.apache.activemq.artemis.utils.level=INFO
+
+      logger.org.apache.activemq.artemis.jms.level=INFO
+
+      logger.org.apache.activemq.artemis.integration.bootstrap.level=INFO
+
+      logger.org.eclipse.jetty.level=WARN
+
+      # Root logger handlers
+
+      logger.handlers=CONSOLE
+
+
+      # Console handler configuration
+
+      handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+
+      handler.CONSOLE.properties=autoFlush
+
+      handler.CONSOLE.level=DEBUG
+
+      handler.CONSOLE.autoFlush=true
+
+      handler.CONSOLE.formatter=PATTERN
+
+
+      # File handler configuration
+
+      handler.FILE=org.jboss.logmanager.handlers.PeriodicRotatingFileHandler
+
+      handler.FILE.level=DEBUG
+
+      handler.FILE.properties=suffix,append,autoFlush,fileName
+
+      handler.FILE.suffix=.yyyy-MM-dd
+
+      handler.FILE.append=true
+
+      handler.FILE.autoFlush=true
+
+      handler.FILE.fileName=${artemis.instance}/log/artemis.log
+
+      handler.FILE.formatter=PATTERN
+
+
+      # Formatter pattern configuration
+
+      formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+
+      formatter.PATTERN.properties=pattern
+
+      formatter.PATTERN.pattern=%d %-5p [%c] %s%E%n
+    login.config: |-
+      /*
+      * Licensed to the Apache Software Foundation (ASF) under one or more
+      * contributor license agreements.  See the NOTICE file distributed with
+      * this work for additional information regarding copyright ownership.
+      * The ASF licenses this file to You under the Apache License, Version 2.0
+      * (the "License"); you may not use this file except in compliance with
+      * the License.  You may obtain a copy of the License at
+      *
+      * http://www.apache.org/licenses/LICENSE-2.0
+      *
+      * Unless required by applicable law or agreed to in writing, software
+      * distributed under the License is distributed on an "AS IS" BASIS,
+      * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      * See the License for the specific language governing permissions and
+      * limitations under the License.
+      */
+
+      activemq {
+        org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule required
+            debug=false
+            reload=true
+            org.apache.activemq.jaas.properties.user="artemis-users.properties"
+            org.apache.activemq.jaas.properties.role="artemis-roles.properties";
+      };
+    management.xml: |-
+      <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <!--
+        ~ Licensed to the Apache Software Foundation (ASF) under one or more
+        ~ contributor license agreements. See the NOTICE file distributed with
+        ~ this work for additional information regarding copyright ownership.
+        ~ The ASF licenses this file to You under the Apache License, Version 2.0
+        ~ (the "License"); you may not use this file except in compliance with
+        ~ the License. You may obtain a copy of the License at
+        ~
+        ~     http://www.apache.org/licenses/LICENSE-2.0
+        ~
+        ~ Unless required by applicable law or agreed to in writing, software
+        ~ distributed under the License is distributed on an "AS IS" BASIS,
+        ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        ~ See the License for the specific language governing permissions and
+        ~ limitations under the License.
+        -->
+      <management-context xmlns="http://activemq.org/schema">
+        <!--<connector connector-port="1099"/>-->
+        <authorisation>
+            <whitelist>
+              <entry domain="hawtio"/>
+            </whitelist>
+            <default-access>
+              <access method="list*" roles="amq"/>
+              <access method="get*" roles="amq"/>
+              <access method="is*" roles="amq"/>
+              <access method="set*" roles="amq"/>
+              <access method="*" roles="amq"/>
+            </default-access>
+            <role-access>
+              <match domain="org.apache.activemq.artemis">
+                  <access method="list*" roles="amq"/>
+                  <access method="get*" roles="amq"/>
+                  <access method="is*" roles="amq"/>
+                  <access method="set*" roles="amq"/>
+                  <access method="*" roles="amq"/>
+              </match>
+              <!--example of how to configure a specific object-->
+              <!--<match domain="org.apache.activemq.artemis" key="subcomponent=queues">
+                  <access method="list*" roles="view,update,amq"/>
+                  <access method="get*" roles="view,update,amq"/>
+                  <access method="is*" roles="view,update,amq"/>
+                  <access method="set*" roles="update,amq"/>
+                  <access method="*" roles="amq"/>
+              </match>-->
+            </role-access>
+        </authorisation>
+      </management-context>
+  kind: ConfigMap
+  metadata:
+    name: configmap-slave-broker
+- apiVersion: apps/v1beta1
+  kind: StatefulSet
+  metadata:
+    labels:
+      amqcluster: artemis
+      app: artemis-master
+      application: artemis-master
+    name: artemis-master
+  spec:
+    podManagementPolicy: OrderedReady
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: artemis-master
+    serviceName: ''
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          amqcluster: artemis
+          app: artemis-master
+          application: artemis-master
+          deploymentConfig: artemis-master
+        name: artemis-master
+      spec:
+        affinity: 
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - artemis-slave
+              topologyKey: kubernetes.io/hostname
+        containers:
+          - env:
+              - name: DISABLE_SECURITY
+                value: 'true'
+              - name: BROKER_IP
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: status.podIP
+              - name: KUBERNETES_NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+            image: >-
+              activemq-artemis-docker:latest
+            imagePullPolicy: Always
+            name: activemq-artemis-docker
+            ports:
+              - containerPort: 1883
+                protocol: TCP
+              - containerPort: 61613
+                protocol: TCP
+              - containerPort: 8161
+                protocol: TCP
+              - containerPort: 9404
+                protocol: TCP
+              - containerPort: 61616
+                protocol: TCP
+              - containerPort: 5445
+                protocol: TCP
+              - containerPort: 5672
+                protocol: TCP
+              - containerPort: 8888
+                name: ping
+                protocol: TCP
+            resources:
+              limits:
+                cpu: '1'
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 1Gi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+              - mountPath: /var/lib/artemis/data
+                name: artemis-volume-1
+              - mountPath: /var/lib/artemis/etc-backup
+                name: artemis-volume-3
+              - mountPath: /var/lib/artemis/lock
+                name: artemis-volume-4
+              - mountPath: /var/lib/artemis/tmp
+                name: artemis-volume-5
+              - mountPath: /var/lib/artemis/etc
+                name: etc
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+          - emptyDir: {}
+            name: artemis-volume-3
+          - emptyDir: {}
+            name: artemis-volume-4
+          - emptyDir: {}
+            name: artemis-volume-5
+          - configMap:
+              defaultMode: 511
+              name: configmap-master-broker
+            name: etc
+    updateStrategy:
+      type: OnDelete
+    volumeClaimTemplates:
+      - metadata:
+          creationTimestamp: null
+          name: artemis-volume-1
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: gp2
+- apiVersion: apps/v1beta1
+  kind: StatefulSet
+  metadata:
+    labels:
+      amqcluster: artemis
+      app: artemis-slave
+      application: artemis-slave
+    name: artemis-slave
+  spec:
+    podManagementPolicy: OrderedReady
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: artemis-slave
+    serviceName: ''
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          amqcluster: artemis
+          app: artemis-slave
+          application: artemis-slave
+          deploymentConfig: artemis-slave
+        name: artemis-slave
+      spec:
+        affinity: 
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - artemis-master
+              topologyKey: kubernetes.io/hostname
+        containers:
+          - env:
+              - name: DISABLE_SECURITY
+                value: 'true'
+              - name: BROKER_IP
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: status.podIP
+              - name: KUBERNETES_NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+            image: >-
+              activemq-artemis-docker:latest
+            imagePullPolicy: Always
+            name: activemq-artemis-docker
+            ports:
+              - containerPort: 1883
+                protocol: TCP
+              - containerPort: 61613
+                protocol: TCP
+              - containerPort: 8161
+                protocol: TCP
+              - containerPort: 9404
+                protocol: TCP
+              - containerPort: 61616
+                protocol: TCP
+              - containerPort: 5445
+                protocol: TCP
+              - containerPort: 5672
+                protocol: TCP
+              - containerPort: 8888
+                name: ping
+                protocol: TCP
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+              - mountPath: /var/lib/artemis/data
+                name: artemis-volume-1
+              - mountPath: /var/lib/artemis/etc-backup
+                name: artemis-volume-3
+              - mountPath: /var/lib/artemis/lock
+                name: artemis-volume-4
+              - mountPath: /var/lib/artemis/tmp
+                name: artemis-volume-5
+              - mountPath: /var/lib/artemis/etc
+                name: etc
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+          - emptyDir: {}
+            name: artemis-volume-3
+          - emptyDir: {}
+            name: artemis-volume-4
+          - emptyDir: {}
+            name: artemis-volume-5
+          - configMap:
+              defaultMode: 511
+              name: configmap-slave-broker
+            name: etc
+    updateStrategy:
+      type: OnDelete
+    volumeClaimTemplates:
+      - metadata:
+          creationTimestamp: null
+          name: artemis-volume-1
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: gp2
+## Routes
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: artemis-master
+      template: artemis-persistent-replicated
+    name: artemis-persistent-master
+  spec:
+    port:
+      targetPort: 8161-tcp
+    to:
+      kind: Service
+      name: artemis-master
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: artemis-slave
+      template: artemis-persistent-replicated
+    name: artemis-persistent-slave
+  spec:
+    port:
+      targetPort: 8161-tcp
+    to:
+      kind: Service
+      name: artemis-slave
+      weight: 100
+    wildcardPolicy: None
+
